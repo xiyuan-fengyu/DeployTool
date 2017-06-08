@@ -184,9 +184,11 @@ public class MainDialog extends DialogWrapper {
         remoteUserInput.setText(propertiesComponent.getValue(Keys.remoteUser, ""));
         remotePasswordInput.setText(propertiesComponent.getValue(Keys.remotePassword, ""));
         remotePathInput.setText(propertiesComponent.getValue(Keys.remotePath, ""));
-        autoRestartServer.setSelected(propertiesComponent.getBoolean(Keys.autoRestartServer, true));
+        autoRestartServer.setSelected(propertiesComponent.getBoolean(Keys.autoRestartServer));
         stopServerCmdInput.setText(propertiesComponent.getValue(Keys.stopServerCmd, ""));
         startServerCmdInput.setText(propertiesComponent.getValue(Keys.startServerCmd, ""));
+
+        logs.setAutoscrolls(true);
     }
 
     private void initLocalPath() {
