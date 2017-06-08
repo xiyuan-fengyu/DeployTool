@@ -116,7 +116,7 @@ public class MainDialog extends DialogWrapper {
                     changedFiles.add(cutSelectedFile);
                 }
                 else {
-                    String localMd5 = Md5Util.get(FileUtil.get(selectedFile));
+                    String localMd5 = Md5Util.get(FileUtil.getBytes(selectedFile));
                     if (!remoteMd5.equals(localMd5)) {
                         changedFiles.add(cutSelectedFile);
                     }
