@@ -11,7 +11,8 @@ import java.nio.charset.StandardCharsets;
 public class Test {
 
     public static void main(String[] args) {
-        System.out.println(Md5Util.get(FileUtil.get("D:\\SoftwareForCode\\MyEclipseProject\\DeployTool\\src\\com\\xiyuan\\deploy\\util\\Md5Util.java", StandardCharsets.UTF_8)));
+        System.out.println(Md5Util.get(FileUtil.getBytes("D:\\SoftwareForCode\\MyEclipseProject\\DeployTool\\.idea\\Log$.class")));
+        System.out.println(Md5Util.get(FileUtil.get("D:\\SoftwareForCode\\MyEclipseProject\\DeployTool\\.idea\\Log$.class")));
     }
 
 }

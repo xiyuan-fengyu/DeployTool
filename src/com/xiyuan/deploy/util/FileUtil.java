@@ -19,10 +19,15 @@ public class FileUtil {
     }
 
     public static String get(String path, Charset charset) {
+        byte[] bytes = getBytes(path);
+        return bytes == null ? null : new String(bytes, charset);
+    }
+
+    public static byte[] getBytes(String path) {
         try (InputStream in = new FileInputStream(new File(path))) {
             byte[] bytes = new byte[in.available()];
             in.read(bytes);
-            return new String(bytes, charset);
+            return bytes;
         } catch (IOException e) {
             e.printStackTrace();
         }
