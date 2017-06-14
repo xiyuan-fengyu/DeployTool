@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.*;
 import com.intellij.util.ui.UIUtil;
+import com.jcraft.jsch.JSchException;
 import com.xiyuan.deploy.keys.Keys;
 import com.xiyuan.deploy.util.FileUtil;
 import com.xiyuan.deploy.util.LinuxUtil;
@@ -22,6 +23,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ public class MainDialog extends DialogWrapper {
     private JTextField stopServerCmdInput;
     private JTextArea logs;
     private JTextField startServerCmdInput;
+    private JTextField remotePortInput;
 
     private Project project;
 
@@ -64,6 +67,17 @@ public class MainDialog extends DialogWrapper {
             logs.append("请输入远程服务器的ip\n");
             return;
         }
+
+        String portStr = remotePortInput.getText();
+        if (portStr.equals("")) {
+            logs.append("请输入远程服务器的port\n");
+            return;
+        }
+        else if (!portStr.matches("\\d+")) {
+            logs.append("远程服务器的port应该为整数\n");
+            return;
+        }
+        int port = Integer.parseInt(portStr);
 
         String user = remoteUserInput.getText();
         if (user.equals("")) {
@@ -105,7 +119,13 @@ public class MainDialog extends DialogWrapper {
         //获取服务器上 remotePath 目录下的有所文件及其md5码,并与本地选中的文件作对比，然后上传改动的文件
         logs.append("正在获取服务器端文件列表\n");
         new Thread(() -> {
-            HashMap<String, String> remoteFileMd5s = LinuxUtil.listFilesMd5(ip, user, password, remotePath);
+            HashMap<String, String> remoteFileMd5s = null;
+            try {
+                remoteFileMd5s = LinuxUtil.listFilesMd5(ip, port, user, password, remotePath);
+            } catch (IOException | JSchException e) {
+                logs.append(e.toString());
+                return;
+            }
 
             String localPathStr = localPath.getText();
             HashSet<String> changedFiles = new HashSet<>();
@@ -130,22 +150,28 @@ public class MainDialog extends DialogWrapper {
 
             logs.append("所选文件中共 " + changedFiles.size() + " 个需要上传\n\n");
             logs.append("开始上传文件\n\n");
-            int[] result = LinuxUtil.uploadFiles(ip, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
-                @Override
-                public void onStart(int cur, int total, Object userData) {
-                    logs.append("正在上传 " + userData + "    " + cur + " / " + total + "\n");
-                }
+            int[] result = new int[0];
+            try {
+                result = LinuxUtil.uploadFiles(ip, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
+                    @Override
+                    public void onStart(int cur, int total, Object userData) {
+                        logs.append("正在上传 " + userData + "    " + cur + " / " + total + "\n");
+                    }
 
-                @Override
-                public void onSuccess(int cur, int total, Object userData) {
-                    logs.append("上传成功 " + cur + " / " + total + "\n");
-                }
+                    @Override
+                    public void onSuccess(int cur, int total, Object userData) {
+                        logs.append("上传成功 " + cur + " / " + total + "\n");
+                    }
 
-                @Override
-                public void onFail(int cur, int total, Object userData) {
-                    logs.append("上传失败 " + cur + " / " + total + "\t" + userData +  "\n");
-                }
-            });
+                    @Override
+                    public void onFail(int cur, int total, Object userData) {
+                        logs.append("上传失败 " + cur + " / " + total + "\t" + userData +  "\n");
+                    }
+                });
+            } catch (JSchException e) {
+                logs.append(e.toString());
+                return;
+            }
 
             logs.append("\n文件上传全部完成\n全部：" + result[0] + "\t成功：" + result[1] + "\t失败：" + result[2] + "\n\n");
 
@@ -153,14 +179,24 @@ public class MainDialog extends DialogWrapper {
                 String stopCmd = stopServerCmdInput.getText();
                 if (!"".equals(stopCmd)) {
                     logs.append("正在停止服务器\n");
-                    LinuxUtil.execute(ip, user, password, stopCmd);
+                    try {
+                        LinuxUtil.execute(ip, port, user, password, stopCmd);
+                    } catch (IOException | JSchException e) {
+                        logs.append(e.toString());
+                        return;
+                    }
                     logs.append("服务器已停止\n\n");
                 }
 
                 String startCmd = startServerCmdInput.getText();
                 if (!"".equals(startCmd)) {
                     logs.append("正在启动服务器\n");
-                    LinuxUtil.execute(ip, user, password, startCmd);
+                    try {
+                        LinuxUtil.execute(ip, port, user, password, startCmd);
+                    } catch (IOException | JSchException e) {
+                        logs.append(e.toString());
+                        return;
+                    }
                     logs.append("服务器已启动\n\n");
                 }
             }
@@ -193,9 +229,10 @@ public class MainDialog extends DialogWrapper {
 
     private void initLocalPath() {
         String oldLocalPath = propertiesComponent.getValue(Keys.localPath);
-        if (oldLocalPath != null) {
-            localPath.setText(oldLocalPath);
+        if (oldLocalPath == null) {
+            oldLocalPath = project.getBasePath();
         }
+        localPath.setText(oldLocalPath);
         localPath.addBrowseFolderListener(new TextBrowseFolderListener(new FileChooserDescriptor(false, true, false, false, false, false), project) {
             @Override
             protected void onFileChosen(@NotNull VirtualFile chosenFile) {

@@ -17,13 +17,13 @@ public class LinuxUtil {
     private static final JSch jsch = new JSch();
 
     //基于 jsch-0.1.54.jar 的实现
-    public static ArrayList<String> execute(String ip, String user, String password, String cmd) {
+    public static ArrayList<String> execute(String ip, int port, String user, String password, String cmd) throws IOException, JSchException {
         ArrayList<String> stds = new ArrayList<>();
 
         Session session = null;
         ChannelExec channelExec = null;
         try {
-            session = jsch.getSession(user, ip);
+            session = jsch.getSession(user, ip, port);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect();
@@ -40,11 +40,7 @@ public class LinuxUtil {
                 stds.add(line);
             }
             reader.close();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
+        } finally {
             if (session != null) {
                 session.disconnect();
             }
@@ -116,9 +112,10 @@ public class LinuxUtil {
 //        return stds;
 //    }
 
-    public static HashMap<String, String> listFilesMd5(String ip, String user, String password, String path) {
+    public static HashMap<String, String> listFilesMd5(String ip, int port, String user, String password, String path) throws IOException, JSchException {
         ArrayList<String> stds = execute(
                 ip,
+                port,
                 user,
                 password,
                 "if [ ! -x \"/tmp/listFilesMd5.sh\" ]; then\necho '#!/bin/sh\nfunction listFiles() {\nfor file in ` ls $1$2 `\ndo\nif [ -d $1$2\"/\"$file ]\nthen\nlistFiles $1 $2\"/\"$file\nelse\nmd5=`md5sum $1$2\"/\"$file | cut -d \" \" -f1`\npre=$2\"/\"\necho -e ${pre:1}$file\"\\t\"$md5\nfi\ndone\n}\nlistFiles $1 \"\"' > /tmp/listFilesMd5.sh\nchmod +x /tmp/listFilesMd5.sh\nfi; /tmp/listFilesMd5.sh " + path + ";"
@@ -156,7 +153,7 @@ public class LinuxUtil {
 
     }
 
-    public static int[] uploadFiles(String ip, String user, String password, String localRoot, HashSet<String> localFiles, String remoteRoot, UploadListener listener) {
+    public static int[] uploadFiles(String ip, String user, String password, String localRoot, HashSet<String> localFiles, String remoteRoot, UploadListener listener) throws JSchException {
         int total = localFiles.size();
         int cur = 0;
         int success = 0;
@@ -224,11 +221,7 @@ public class LinuxUtil {
                     }
                 }
             }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
+        } finally {
             if (session != null) {
                 session.disconnect();
             }
@@ -240,24 +233,14 @@ public class LinuxUtil {
         return new int[] {total, success, fail};
     }
 
-    private static void close(Object object) {
-        if (object != null) {
-            try {
-                Method closeMethod = object.getClass().getMethod("close");
-                closeMethod.invoke(object);
-            }
-            catch (Exception e) {}
-        }
-    }
-
-    public static void main(String[] args) {
-        //获取特定目录下面所有文件的md5码
-//        String path = "/root/workplace";
-//        listFilesMd5("192.168.1.240", "root", "111111", path).forEach((key, val) -> {
-//            System.out.println(key + "\t" + val);
-//        });
-
-//        execute("192.168.1.240", "root", "111111", "ls /root/workplace").forEach(item -> System.out.println(item));
-    }
+//    private static void close(Object object) {
+//        if (object != null) {
+//            try {
+//                Method closeMethod = object.getClass().getMethod("close");
+//                closeMethod.invoke(object);
+//            }
+//            catch (Exception e) {}
+//        }
+//    }
 
 }
