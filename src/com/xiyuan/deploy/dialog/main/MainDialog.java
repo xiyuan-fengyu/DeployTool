@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.DefaultCaret;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.IOException;
@@ -56,6 +57,8 @@ public class MainDialog extends DialogWrapper {
         propertiesComponent = PropertiesComponent.getInstance(project);
         init();
         setTitle(title);
+
+        ((DefaultCaret)logs.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         setOKActionEnabled(true);
     }
@@ -145,35 +148,35 @@ public class MainDialog extends DialogWrapper {
 
             if (changedFiles.size() == 0) {
                 logs.append("所选文件中没有发生改变\n");
-                return;
             }
+            else {
+                logs.append("所选文件中共 " + changedFiles.size() + " 个需要上传\n\n");
+                logs.append("开始上传文件\n\n");
+                int[] result;
+                try {
+                    result = LinuxUtil.uploadFiles(ip, port, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
+                        @Override
+                        public void onStart(int cur, int total, Object userData) {
+                            logs.append("正在上传 " + userData + "    " + cur + " / " + total + "\n");
+                        }
 
-            logs.append("所选文件中共 " + changedFiles.size() + " 个需要上传\n\n");
-            logs.append("开始上传文件\n\n");
-            int[] result = new int[0];
-            try {
-                result = LinuxUtil.uploadFiles(ip, port, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
-                    @Override
-                    public void onStart(int cur, int total, Object userData) {
-                        logs.append("正在上传 " + userData + "    " + cur + " / " + total + "\n");
-                    }
+                        @Override
+                        public void onSuccess(int cur, int total, Object userData) {
+                            logs.append("上传成功 " + cur + " / " + total + "\n");
+                        }
 
-                    @Override
-                    public void onSuccess(int cur, int total, Object userData) {
-                        logs.append("上传成功 " + cur + " / " + total + "\n");
-                    }
+                        @Override
+                        public void onFail(int cur, int total, Object userData) {
+                            logs.append("上传失败 " + cur + " / " + total + "\t" + userData +  "\n");
+                        }
+                    });
+                } catch (JSchException e) {
+                    logs.append(e.toString());
+                    return;
+                }
 
-                    @Override
-                    public void onFail(int cur, int total, Object userData) {
-                        logs.append("上传失败 " + cur + " / " + total + "\t" + userData +  "\n");
-                    }
-                });
-            } catch (JSchException e) {
-                logs.append(e.toString());
-                return;
+                logs.append("\n文件上传全部完成\n全部：" + result[0] + "\t成功：" + result[1] + "\t失败：" + result[2] + "\n\n");
             }
-
-            logs.append("\n文件上传全部完成\n全部：" + result[0] + "\t成功：" + result[1] + "\t失败：" + result[2] + "\n\n");
 
             if (autoRestartServer.isSelected()) {
                 String stopCmd = stopServerCmdInput.getText();
