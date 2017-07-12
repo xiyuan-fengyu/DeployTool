@@ -217,6 +217,7 @@ public class MainDialog extends DialogWrapper {
         initLocalFileTree();
 
         remoteIpInput.setText(propertiesComponent.getValue(Keys.remoteIp, ""));
+        remotePortInput.setText(propertiesComponent.getValue(Keys.remotePort, "22"));
         remoteUserInput.setText(propertiesComponent.getValue(Keys.remoteUser, ""));
         remotePasswordInput.setText(propertiesComponent.getValue(Keys.remotePassword, ""));
         remotePathInput.setText(propertiesComponent.getValue(Keys.remotePath, ""));
@@ -382,6 +383,7 @@ public class MainDialog extends DialogWrapper {
 
                             propertiesComponent.setValue(Keys.remoteIp, remoteIpInput.getText());
                             propertiesComponent.setValue(Keys.remoteUser, remoteUserInput.getText());
+                            propertiesComponent.setValue(Keys.remotePort, remotePortInput.getText());
                             propertiesComponent.setValue(Keys.remotePassword, String.valueOf(remotePasswordInput.getPassword()));
                             propertiesComponent.setValue(Keys.remotePath, remotePathInput.getText());
                             propertiesComponent.setValue(Keys.autoRestartServer, autoRestartServer.isSelected());

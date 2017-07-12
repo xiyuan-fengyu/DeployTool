@@ -11,6 +11,8 @@ public interface Keys {
 
     String remoteIp = "DeployTool.remoteIp";
 
+    String remotePort = "DeployTool.remotePort";
+
     String remoteUser = "DeployTool.remoteUser";
 
     String remotePassword = "DeployTool.remotePassword";
