@@ -153,7 +153,7 @@ public class LinuxUtil {
 
     }
 
-    public static int[] uploadFiles(String ip, String user, String password, String localRoot, HashSet<String> localFiles, String remoteRoot, UploadListener listener) throws JSchException {
+    public static int[] uploadFiles(String ip, int port,  String user, String password, String localRoot, HashSet<String> localFiles, String remoteRoot, UploadListener listener) throws JSchException {
         int total = localFiles.size();
         int cur = 0;
         int success = 0;
@@ -162,7 +162,7 @@ public class LinuxUtil {
         Session session = null;
         ChannelSftp channelSftp = null;
         try {
-            session = jsch.getSession(user, ip);
+            session = jsch.getSession(user, ip, port);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect();

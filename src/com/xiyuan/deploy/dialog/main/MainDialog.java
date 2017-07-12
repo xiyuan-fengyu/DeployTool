@@ -152,7 +152,7 @@ public class MainDialog extends DialogWrapper {
             logs.append("开始上传文件\n\n");
             int[] result = new int[0];
             try {
-                result = LinuxUtil.uploadFiles(ip, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
+                result = LinuxUtil.uploadFiles(ip, port, user, password, localPathStr, changedFiles, remotePath, new LinuxUtil.UploadListener() {
                     @Override
                     public void onStart(int cur, int total, Object userData) {
                         logs.append("正在上传 " + userData + "    " + cur + " / " + total + "\n");
